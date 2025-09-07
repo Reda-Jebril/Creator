@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>محول الأسئلة الذكي المتطور - النسخة النهائية</title>
+    <title>معالج الأسئلة </title>
     <!-- Handsontable CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400..700&display=swap" rel="stylesheet">
+
     <style>
         /* --- Basic Setup --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: "Noto Naskh Arabic", 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #e51d74 100%);
             min-height: 100vh; padding: 20px; color: #333;
             display: flex; align-items: center; justify-content: center;
         }
@@ -277,7 +281,13 @@
             .controls { flex-direction: column; } .btn { width: 100%; } .question-type-selector { grid-template-columns: 1fr 1fr; }
             .generation-content { grid-template-columns: 1fr; }
         }
+
+
+        .noto-naskh-arabic { font-family: "Noto Naskh Arabic", serif; font-optical-sizing: auto; font-style: normal; font-size: 18px; }
+
+        
     </style>
+    
 </head>
 <body>
     <div id="messageContainer" class="message-container"></div>
@@ -289,12 +299,12 @@
         </div>
         <div class="content">
             <!-- Input Panel -->
-            <div class="panel">
+            <div class="panel ">
                 <h3 id="panel-title-1"><span style="font-size: 1.5em; line-height: 1;">①</span> اختر نوع السؤال (للنص البسيط)</h3>
                 <div id="questionTypeSelector" class="question-type-selector"></div>
                 <h3 id="panel-title-2" style="margin-top: 20px;"><span style="font-size: 1.5em; line-height: 1;">②</span> أدخل النص</h3>
                 <div class="input-section">
-                    <textarea id="questionInput" placeholder="أدخل محتوى السؤال هنا...
+                    <textarea id="questionInput" class="noto-naskh-arabic" placeholder="أدخل محتوى السؤال هنا...
 سيتم تجاهل أي بيانات وصفية مثل id أو language (ما عدا type الذي سيضاف تلقائيًا).
 استخدم الوسوم مثل @STEM و @CHOICES لتحديد أجزاء السؤال.
 افصل بين كل سؤال بـ ---
@@ -2004,7 +2014,7 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                         finalHtmlContent += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
                     }
                 }
-                return `<p class="LexicalTheme__paragraph"${direction}>${finalHtmlContent}</p>`;
+                return `<p class="LexicalTheme__paragraph" style="text-align: justify;" ${direction}>${finalHtmlContent}</p>`;
             }
             
             createMathField(equation, language, forceEn = false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex) {

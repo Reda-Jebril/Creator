@@ -1988,34 +1988,83 @@ const prompt = this.buildAdvancedFormattingPrompt(rawText, forcedType);
                 this.logger.info("All data has been cleared.");
             }
             
-            processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex = -1) {
-                if (!text) return '';
-                const direction = language === this.Language.ARABIC ? ' dir="rtl"' : '';
-                
-                // FIX: Changed from 5 or more underscores to 4 or more, per user request.
-                let processedText = text.replace(/_{4,}/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
+processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex = -1) {
+    if (!text) return '';
 
-                const parts = processedText.split(/(``[\s\S]*?``|`[\s\S]*?`|<span data-node-type="blank-line" data-node-variation="gap"> <\/span>|<span data-node-type="blank-line" data-node-variation="space">&nbsp;<\/span>)/);
-                let finalHtmlContent = "";
-                
-                let mathFieldIndex = 0;
-                for (const part of parts) {
-                    if (!part) continue;
-                    if (part.startsWith('``') && part.endsWith('``')) {
-                        finalHtmlContent += this.createMathField(part.slice(2, -2), language, true, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex++);
-                    } else if (part.startsWith('`') && part.endsWith('`')) {
-                        finalHtmlContent += this.createMathField(part.slice(1, -1), language, false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex++);
-                    } else if (part.includes('data-node-type="blank-line"')) {
-                        finalHtmlContent += part;
-                    } else {
-                        let textPart = part;
-                        // NEW: Handle underline tag [U]...[/U] before sanitizing
-                        textPart = textPart.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
-                        finalHtmlContent += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
-                    }
-                }
-                return `<p class="LexicalTheme__paragraph" style="text-align: justify;" ${direction}>${finalHtmlContent}</p>`;
+    const direction = language === this.Language.ARABIC ? ' dir="rtl"' : '';
+
+    // Helper function to process the content of a single line, preserving 'this' context.
+    const processLineContent = (lineText) => {
+        // FIX: Changed from 5 or more underscores to 4 or more, per user request.
+        let processedText = lineText.replace(/_{4,}/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
+
+        const parts = processedText.split(/(``[\s\S]*?``|`[\s\S]*?`|<span data-node-type="blank-line" data-node-variation="gap"> <\/span>|<span data-node-type="blank-line" data-node-variation="space">&nbsp;<\/span>)/);
+        let finalHtmlContent = "";
+        
+        let mathFieldIndex = 0;
+        for (const part of parts) {
+            if (!part) continue;
+            if (part.startsWith('``') && part.endsWith('``')) {
+                finalHtmlContent += this.createMathField(part.slice(2, -2), language, true, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex++);
+            } else if (part.startsWith('`') && part.endsWith('`')) {
+                finalHtmlContent += this.createMathField(part.slice(1, -1), language, false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex++);
+            } else if (part.includes('data-node-type="blank-line"')) {
+                finalHtmlContent += part;
+            } else {
+                let textPart = part;
+                // NEW: Handle underline tag [U]...[/U] before sanitizing
+                textPart = textPart.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
+                finalHtmlContent += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
             }
+        }
+        return finalHtmlContent;
+    };
+
+    const lines = text.split('\n');
+    let finalHtmlOutput = '';
+    let inList = false;
+
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+
+        if (trimmedLine.startsWith('§')) {
+            // If we are not already in a list, start a new one.
+            if (!inList) {
+                finalHtmlOutput += `<ul class="LexicalTheme__list"${direction}>`;
+                inList = true;
+            }
+            // Process the content of the list item (after the '§' marker).
+            const listItemContent = trimmedLine.substring(1).trim();
+            const processedContent = processLineContent(listItemContent);
+            finalHtmlOutput += `<li class="LexicalTheme__listItem" style="text-align: justify;">${processedContent}</li>`;
+        } else {
+            // If we were in a list, close it as we've encountered a non-list item line.
+            if (inList) {
+                finalHtmlOutput += '</ul>';
+                inList = false;
+            }
+
+            // Skip processing for empty lines to avoid creating empty <p> tags.
+            if (trimmedLine === '') {
+                continue;
+            }
+
+            // Process the line as a standard paragraph.
+            const processedContent = processLineContent(line);
+            finalHtmlOutput += `<p class="LexicalTheme__paragraph" style="text-align: justify;"${direction}>${processedContent}</p>`;
+        }
+    }
+
+    // After the loop, if we're still in a list, it means the text ended with a list item.
+    // So, we need to close the final <ul> tag.
+    if (inList) {
+        finalHtmlOutput += '</ul>';
+    }
+
+    return finalHtmlOutput;
+}
+
+
             
             createMathField(equation, language, forceEn = false, questionId, partIndex, fieldType, choiceIndex, mathFieldIndex) {
                 const isArabic = language === this.Language.ARABIC && !forceEn;

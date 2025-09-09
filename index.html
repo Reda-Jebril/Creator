@@ -1994,7 +1994,7 @@ processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex
     const direction = language === this.Language.ARABIC ? ' dir="rtl"' : '';
 
     // Helper function to process the content of a single line, preserving 'this' context.
-    const processLineContent = (lineText) => {
+    const processLineContent = (lineText, isInsideList=false) => {
         // FIX: Changed from 5 or more underscores to 4 or more, per user request.
         let processedText = lineText.replace(/_{4,}/g, '<span data-node-type="blank-line" data-node-variation="space">&nbsp;</span>');
 
@@ -2014,7 +2014,7 @@ processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex
                 let textPart = part;
                 // NEW: Handle underline tag [U]...[/U] before sanitizing
                 textPart = textPart.replace(/\[U\]([\s\S]+?)\[\/U\]/g, '<u>$1</u>');
-                finalHtmlContent += `<span style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
+                finalHtmlContent += `<span ${isInsideList? 'class="merge"' : ""} style="white-space: pre-wrap;">${DOMPurify.sanitize(textPart)}</span>`;
             }
         }
         return finalHtmlContent;
@@ -2035,7 +2035,7 @@ processTextForHtml(text, language, questionId, partIndex, fieldType, choiceIndex
             }
             // Process the content of the list item (after the '§' marker).
             const listItemContent = trimmedLine.substring(1).trim();
-            const processedContent = processLineContent(listItemContent);
+            const processedContent = processLineContent(listItemContent, true);
             finalHtmlOutput += `<li class="LexicalTheme__listItem" style="text-align: justify;">${processedContent}</li>`;
         } else {
             // If we were in a list, close it as we've encountered a non-list item line.
